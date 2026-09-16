@@ -1,0 +1,105 @@
+// AdventureWorks Sales Performance
+// Key DAX Measures used in the Power BI course project
+// Selected from the measures used for sales, quota, YoY,
+// and salesperson performance analysis.
+
+
+// =====================================================
+// SALES METRICS
+// =====================================================
+
+// Total Sales
+Total Sales =
+SUM(FactSales[SalesAmount])
+
+
+// Total Orders
+Total Orders =
+DISTINCTCOUNT(FactSales[SalesOrderID])
+
+
+// Total Quantity Sold
+Total Quantity Sold =
+SUM(FactSales[OrderQty])
+
+
+// Average Order Value
+// Original model measure name: "Avrage Order Value"
+Avrage Order Value =
+DIVIDE([Total Sales], [Total Orders])
+
+
+// =====================================================
+// TIME INTELLIGENCE
+// =====================================================
+
+// Previous Year Sales
+Sales LY =
+CALCULATE(
+    [Total Sales],
+    SAMEPERIODLASTYEAR(DimDate[Date])
+)
+
+
+// Year-over-Year Sales Growth
+Sales YoY% =
+DIVIDE(
+    [Total Sales] - [Sales LY],
+    [Sales LY]
+)
+
+
+// =====================================================
+// QUOTA & PERFORMANCE
+// =====================================================
+
+// Sales Quota
+Sales Quota =
+SUM(FactQuota[SalesQuota])
+
+
+// Achievement %
+Achievement % =
+DIVIDE([Total Sales], [Sales Quota])
+
+
+// Quota Gap
+Quota Gap =
+'Table'[Total Sales] - [Sales Quota]
+
+
+// Auxiliary measure used by ranking logic
+Achievement Rounded =
+ROUND(
+    [Achievement %],
+    6
+)
+
+
+// Salesperson Performance Rank
+Performance Rank =
+VAR CurrentAchievement =
+    [Achievement Rounded]
+RETURN
+    IF(
+        ISINSCOPE(DimSalesPerson[SalesPersonName]),
+        RANKX(
+            ALL(DimSalesPerson[SalesPersonName]),
+            [Achievement Rounded],
+            CurrentAchievement,
+            DESC,
+            DENSE
+        ),
+        BLANK()
+    )
+
+
+// Performance Rank used in salesperson detail analysis
+Performance Rank Detail =
+RANKX(
+    ALL(DimSalesPerson[SalesPersonName]),
+    CALCULATE([Achievement Rounded]),
+    ,
+    DESC,
+    DENSE
+)
