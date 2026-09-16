@@ -1,0 +1,168 @@
+// Casino Gaming Analytics
+// Key DAX Measures used in the Power BI dashboard
+// Selected to demonstrate core financial, player, retention, cohort,
+// segmentation, and operational analysis logic.
+
+
+// =====================================================
+// CORE GAMING & FINANCIAL METRICS
+// =====================================================
+
+// Total Turnover
+Total Turnover =
+SUM(FactSessions[TotalBet])
+
+
+// Gross Gaming Revenue
+GGR =
+SUM(FactSessions[Profit])
+
+
+// Actual Hold %
+Actual Hold % =
+DIVIDE([GGR], [Total Turnover], 0)
+
+
+// Total Deposits
+Total Deposits =
+CALCULATE(
+    SUM(FactTransactions[Amount]),
+    FactTransactions[TransactionType] = "Deposit"
+)
+
+
+// Total Withdrawals
+Total Withdrawals =
+CALCULATE(
+    SUM(FactTransactions[Amount]),
+    FactTransactions[TransactionType] = "Withdrawal"
+)
+
+
+// Net Cash Flow
+Net Cash Flow =
+[Total Deposits] - [Total Withdrawals]
+
+
+// =====================================================
+// PLAYER & RETENTION ANALYSIS
+// =====================================================
+
+// Returning Players
+Returning Players =
+COUNTROWS(
+    FILTER(
+        VALUES(FactSessions[PlayerID]),
+        CALCULATE(
+            DISTINCTCOUNT(FactSessions[SessionDate])
+        ) > 1
+    )
+)
+
+
+// Retention Rate
+Retention Rate =
+DIVIDE([Returning Players], [Unique Players], 0)
+
+
+// Average Days Between Visits
+Avg Days Between Visits =
+VAR SessionsWithPrevious =
+    ADDCOLUMNS(
+        FactSessions,
+        "@PreviousVisit",
+        VAR CurrentPlayer = FactSessions[PlayerID]
+        VAR CurrentStart = FactSessions[StartTime]
+        RETURN
+            MAXX(
+                FILTER(
+                    ALL(FactSessions),
+                    FactSessions[PlayerID] = CurrentPlayer
+                        && FactSessions[StartTime] < CurrentStart
+                ),
+                FactSessions[StartTime]
+            )
+    )
+RETURN
+    AVERAGEX(
+        FILTER(
+            SessionsWithPrevious,
+            NOT ISBLANK([@PreviousVisit])
+        ),
+        DATEDIFF(
+            [@PreviousVisit],
+            FactSessions[StartTime],
+            DAY
+        )
+    )
+
+
+// Cohort Retention %
+Cohort Retention % =
+VAR CohortSize =
+    CALCULATE(
+        [Players with Sessions],
+        REMOVEFILTERS(FactSessions[CohortMonthLabel]),
+        REMOVEFILTERS(FactSessions[CohortMonthIndex]),
+        FactSessions[CohortMonthIndex] = 0
+    )
+RETURN
+    DIVIDE(
+        [Players with Sessions],
+        CohortSize
+    )
+
+
+// Players % by VIP Level
+Players % by VIP Level =
+DIVIDE(
+    [Unique Players],
+    CALCULATE(
+        [Unique Players],
+        REMOVEFILTERS(DimPlayers[VIPLevel]),
+        REMOVEFILTERS(DimPlayers[VIPLevelOrder])
+    )
+)
+
+
+// =====================================================
+// GAME PERFORMANCE
+// =====================================================
+
+// Top Game by Turnover
+Top Game =
+VAR TopGameTable =
+    TOPN(
+        1,
+        ALLSELECTED(DimGames[GameName]),
+        [Total Turnover],
+        DESC
+    )
+RETURN
+    CONCATENATEX(
+        TopGameTable,
+        DimGames[GameName],
+        ""
+    )
+
+
+// =====================================================
+// OPERATIONAL METRICS
+// =====================================================
+
+// Average Session Length
+Avg Session Length =
+AVERAGE(FactSessions[DurationMin])
+
+
+// Active Tables
+Active Tables =
+DISTINCTCOUNT(FactSessions[TableID])
+
+
+// Sessions per Active Table
+Sessions per Table =
+DIVIDE(
+    [Total Sessions],
+    [Active Tables]
+)
