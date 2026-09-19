@@ -60,14 +60,17 @@ The project focuses on:
 
 ---
 
-## 💻 SQL Business Analysis
+## SQL Business Analysis
 
-**SQL Server | SQL**
+**SQL Server | T-SQL | AdventureWorks 2022**
 
-A collection of business-oriented SQL analyses designed to demonstrate practical SQL skills including joins, aggregations, CTEs, subqueries and window functions.
+A business-focused SQL analysis project built on the AdventureWorks 2022 database, covering 12 business questions across sales, customers, products, territories and salesperson performance.
 
-**Coming soon.**
+The analysis progresses from core aggregations and joins to more advanced techniques including CTEs, subqueries, conditional aggregation and window functions such as `LAG()`, `RANK()` and `NTILE()`.
 
+**Key analysis areas:** Sales Performance • Monthly Growth • Customer Segmentation • Product Ranking • Territory Analysis • Salesperson Quota Performance
+
+[View SQL Business Analysis Project](./SQL-Business-Analysis)
 ---
 
 # 🎯 About This Portfolio
